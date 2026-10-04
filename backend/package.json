@@ -1,0 +1,1 @@
+{"name":"poets-perspectives-mongodb","private":true,"type":"module","scripts":{"start":"node --env-file=.env server.mjs"},"dependencies":{"mongodb":"^6.16.0"},"engines":{"node":">=22"}}
