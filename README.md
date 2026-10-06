@@ -2,7 +2,7 @@
 A private Renaissance garden scrapbook for daily emotional reflection.
 
 ## Features
-- Day planner: a first-person, lamplit writing room with a free-form dated desk page, three editable sticky notes, and a clickable shelf for searching and reopening past days. No checklist or completion score. Planner pages follow the existing session/device/MongoDB saving preference and are included in export and erasure. Older scrapbooks open with an empty planner.
+- Day planner: a first-person, lamplit writing room with a free-form dated desk page and three editable sticky notes. Six individual books open different dated pages with a smooth pull-out animation; the complete archive remains searchable through All your pages. Books show page titles, support keyboard/touch access, and respect reduced-motion preferences. Blank books only enter the archive after writing. No checklist or completion score. Planner pages follow the existing session/device/MongoDB saving preference and are included in export and erasure. Older scrapbooks open with an empty planner.
 - Daily check-in opens first after sign-in: five optional steps covering mood, multiple feelings, energy, sleep, body, stress, focus, self-talk, motivation, connection, care priorities, safety and a personal reflection.
 - Transparent rules-based suggestions use the expanded answers; past check-ins can be reopened from the scrapbook.
 - Inspiria: 1,000 distinct poems and quotes, 50 per page with Go Deeper and Previous 50 navigation, combined theme filters, poem/quote filters, full-text/title/author search, source attribution, a random discovery button, and saving to the scrapbook.

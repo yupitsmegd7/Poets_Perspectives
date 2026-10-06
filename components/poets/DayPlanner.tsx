@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {BookOpen, CalendarDays, Feather, Library, Search} from 'lucide-react';
 import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from '@/components/ui/dialog';
+import PlannerBookshelf from './PlannerBookshelf';
 import {blankPlannerDay, formatPlannerDate, localDateKey, searchPlannerDays, shiftPlannerDate, validPlannerDate, type NoteSlot, type PlannerDay} from '@/lib/planner';
 import './day-planner.css';
 
@@ -26,8 +27,10 @@ export default function DayPlanner({days, onWrite, ready, storage, onSavingPrefe
   const [shelfDate, setShelfDate] = useState('');
   const paperRef = useRef<HTMLTextAreaElement>(null);
   const returnToPaper = useRef(false);
+  const focusFrame = useRef<number | null>(null);
 
   useEffect(() => { const today = localDateKey(); setDate(today); setShelfDate(today); }, []);
+  useEffect(() => () => {if(focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);}, []);
   const page = days.find(day => day.date === date) ?? blankPlannerDay(date);
   const matches = searchPlannerDays(days, query);
 
@@ -59,10 +62,15 @@ export default function DayPlanner({days, onWrite, ready, storage, onSavingPrefe
 
     <div className="planner-room">
       <img className="planner-room-art" src="/writing-room.png" width="1536" height="1024" alt="A first-person view of a dark study, with bookshelves and an old wooden desk lit by a brass lamp"/>
+      <PlannerBookshelf key={`${date}-${shelfOpen}`} days={days} date={date} ready={ready} onOpen={next => {
+        openPage(next);
+        if(focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
+        focusFrame.current = requestAnimationFrame(() => paperRef.current?.focus());
+      }}/>
       <Dialog open={shelfOpen} onOpenChange={open => {setShelfOpen(open); if(open) setShelfDate(date || localDateKey());}}>
         <DialogTrigger asChild>
           <button className="planner-shelf" aria-label={`Open the shelf: ${days.length} day pages`}>
-            <span className="planner-shelf-label"><Library size={19}/><span>The shelf<small>{days.length ? `${days.length} ${days.length === 1 ? 'day' : 'days'} tucked away` : 'A place for your days'}</small></span><span className="shelf-open-word">Open</span></span>
+            <span className="planner-shelf-label"><Library size={19}/><span>All your pages<small>{days.length ? `${days.length} ${days.length === 1 ? 'day' : 'days'} tucked away` : 'Browse or start another day'}</small></span><span className="shelf-open-word">Browse</span></span>
           </button>
         </DialogTrigger>
         <DialogContent className="planner-shelf-dialog" onCloseAutoFocus={event => {
@@ -87,7 +95,7 @@ export default function DayPlanner({days, onWrite, ready, storage, onSavingPrefe
       </Dialog>
 
       <div className="planner-desk" aria-busy={!ready}>
-        <article className="planner-paper">
+        <article key={date} id="planner-day-page" className="planner-paper planner-paper-arriving">
           <div className="planner-paper-top"><Feather size={18}/><span>{date ? formatPlannerDate(date) : 'Opening your desk…'}</span></div>
           <label className="sr-only" htmlFor="planner-page-title">Title for this day</label>
           <input id="planner-page-title" className="planner-paper-title" maxLength={100} placeholder="A shape for today" value={page.title} disabled={!ready || !date} onChange={event => write({title: event.target.value})}/>

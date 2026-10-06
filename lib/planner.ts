@@ -59,4 +59,18 @@ export function searchPlannerDays(days: PlannerDay[], query: string) {
   });
 }
 
+// Keep six distinct dated volumes on the shelf, including the open page.
+// Blank volumes become saved pages only when somebody writes in them.
+export function shelfPageDates(days: PlannerDay[], today: string, selected: string) {
+  if (!validPlannerDate(today)) return [];
+  const dates = new Set<string>([today]);
+  if (validPlannerDate(selected)) dates.add(selected);
+  for (const day of days) {
+    if (dates.size >= 6) break;
+    if (validPlannerDate(day.date)) dates.add(day.date);
+  }
+  for (let offset = 1; dates.size < 6; offset++) dates.add(shiftPlannerDate(today, -offset));
+  return [...dates].sort((a, b) => b.localeCompare(a));
+}
+
 export {validPlannerDate};
