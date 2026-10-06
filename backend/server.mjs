@@ -1,3 +1,4 @@
+import {validPlannerDays} from './planner.mjs';
 import {createServer} from 'node:http';
 import {timingSafeEqual} from 'node:crypto';
 import {MongoClient} from 'mongodb';
@@ -15,7 +16,7 @@ const server=createServer(async(req,res)=>{
   if(req.method==='GET'){const doc=await states.findOne({_id:'private-owner'});return reply(200,{connected:true,state:doc?.state??null});}
   if(req.method==='PUT'){
    let body='',bytes=0;for await(const chunk of req){bytes+=chunk.length;if(bytes>1000000)return reply(413,{error:'Maximum 1 MB'});body+=chunk;}
-   const {state}=JSON.parse(body);if(!state||typeof state.profile!=='object'||!['entries','checks','people','done'].every(k=>Array.isArray(state[k])))return reply(400,{error:'Invalid scrapbook'});
+   const {state}=JSON.parse(body);if(!state||typeof state.profile!=='object'||!['entries','checks','people','done'].every(k=>Array.isArray(state[k]))||!validPlannerDays(state.planner))return reply(400,{error:'Invalid scrapbook'});
    await states.updateOne({_id:'private-owner'},{$set:{state,updatedAt:new Date()}},{upsert:true});return reply(200,{saved:true});
   }reply(405,{error:'Method not allowed'});
  }catch{reply(500,{error:'Storage operation failed'});}
