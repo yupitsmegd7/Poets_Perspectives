@@ -1,7 +1,8 @@
 # Poets & Perspectives
-A private Renaissance garden scrapbook for daily emotional reflection.
+A Renaissance garden scrapbook for daily emotional reflection, with a shared community common room.
 
 ## Features
+- Community common room: four topic rooms, member-created pen-name profiles, a searchable member directory, shared messages, replies, older-message pagination, and updates every eight seconds while visible. Own-message deletion, mutual blocking, reports, and a moderator review desk are included. No simulated members or conversations.
 - Day planner: a first-person, lamplit writing room with a free-form dated desk page and three editable sticky notes. Six individual books open different dated pages with a smooth pull-out animation; the complete archive remains searchable through All your pages. Books show page titles, support keyboard/touch access, and respect reduced-motion preferences. Blank books only enter the archive after writing. No checklist or completion score. Planner pages follow the existing session/device/MongoDB saving preference and are included in export and erasure. Older scrapbooks open with an empty planner.
 - Daily check-in opens first after sign-in: five optional steps covering mood, multiple feelings, energy, sleep, body, stress, focus, self-talk, motivation, connection, care priorities, safety and a personal reflection.
 - Transparent rules-based suggestions use the expanded answers; past check-ins can be reopened from the scrapbook.
@@ -23,11 +24,27 @@ The published private Site runs in an HTTP-only runtime, so the official MongoDB
 3. Configure the private Site's runtime secrets `MONGODB_BRIDGE_URL` and `MONGODB_BRIDGE_TOKEN` using the same token. No secrets belong in browser code.
 4. Reopen the Site, verify the profile footer says private cloud saving, add an entry and refresh to verify persistence.
 
-### Important access boundary
-The bridge stores ONE owner's scrapbook and authenticates the Site server with a bearer token. Keep the Site owner-private. Do not share it or enable public access while this storage mode is active. Multi-user deployment requires user authentication, server-verified identity, per-user MongoDB filters and authorization before sharing. Device storage is opt-in, unencrypted and scoped to the browser profile. Clear it on shared devices. Account deletion writes an empty state; MongoDB backup retention must be managed separately by the database operator.
+### Community setup and access
+The community frontend is published, but the current Site has **no MongoDB bridge configured and remains owner-private**. Other people cannot chat until both shared storage and visitor access are configured. The UI shows a clear opening-soon state rather than pretending that local messages are shared.
+
+1. Deploy the updated `backend/` service with `MONGODB_URI` and `MONGODB_BRIDGE_TOKEN`. It creates indexes for messages, members, reports, blocking, and rate limits on startup. Keep its URL HTTPS and its bearer token server-only.
+2. Configure `MONGODB_BRIDGE_URL` and `MONGODB_BRIDGE_TOKEN` on the Site. Update the bridge and frontend together: the frontend requires `/capabilities` to report storage version 2 before forwarding any storage operation.
+3. Open Community while signed in and create your separate community profile. Choose a pen name and only the interests you want to share. The application never copies your journal, history, check-ins, contacts, or email into a community profile.
+4. In MongoDB, find the trusted moderator's `_id` in `community_members`, add it to the backend's comma-separated `COMMUNITY_MODERATOR_IDS`, and restart the backend. Only these server-configured members can open the moderation desk. Reports are stored for review, not monitored live. Operators must provide moderation for a public community.
+5. Enable the intended visitor access in Site sharing, then test with two different signed-in accounts: send and reply in one room, refresh both browsers, check another room, block/unblock, remove an own message, and confirm that private journals remain separate. The app does not invite or contact people automatically.
+
+### Private data and sign-in
+- Hosted Sites supplies signed-in identity through its trusted dispatch. Every API request derives a stable opaque member key server-side; browser-supplied author IDs and moderator flags are ignored. The bridge requires its bearer token plus this server-supplied identity.
+- Private cloud scrapbooks are now keyed as `user:<member key>`. Community profiles/messages use separate MongoDB collections. The former `private-owner` record is never returned automatically to a community visitor. If a legacy record exists, back it up and have its verified owner export/import it before assigning it to that owner's new record; do not assign it to the first visitor.
+- Device copies are now scoped to the signed-in identity. Earlier `pp-device` copies remain untouched until the owner explicitly uses **Preferences & privacy → Import my earlier device pages**. Import replaces the current journal, so export first if keeping both. Browser storage remains unencrypted; avoid shared browser profiles.
+- Erasing private pages clears the signed-in person's journal only. Community messages are removed using each message's Remove control. Reports may retain a copy for moderation, and database backups follow the operator's retention policy.
+- Messages are plain text, validated and bounded. Sending uses a client nonce for safe retries, and the backend enforces a shared 30-write-per-minute limit per member. Blocks are checked server-side for message feeds, reply excerpts, and member discovery.
+
+### Vercel deployment boundary
+This checkout still uses the existing Sites/Vinext deployment. Sites sign-in headers are trusted only behind Sites dispatch. Community and cloud APIs intentionally fail closed when deployed on Vercel until a verified Vercel-compatible session provider is integrated. Do not copy or fake `oai-authenticated-*` headers to bypass that requirement. The MongoDB service is reusable; a future Vercel migration needs an authenticated server session mapped to the member key, same-origin checks, and the existing ownership filters.
 
 ## Reminders
 Reminders run only while the page is open, following explicit browser permission. Closed-page web push, email/SMS, scheduled random poems and background delivery require a push subscription service and scheduler; these are not connected in this version. The app never claims to monitor safety.
 
 ## Development
-Use the root package scripts for the React application. The backend is a separate Node deployment. Root `npm run build` creates the hosted frontend/server bundle. MongoDB cloud persistence cannot be integration-tested without the operator's database and deployed bridge.
+Use the root package scripts for the React application. The backend is a separate Node deployment. Root `npm run build` creates the hosted frontend/server bundle. Run `node --test backend/tests/community.test.mjs` for the two-user HTTP/authorization flow. The tests use a MongoDB contract fixture; live MongoDB durability and multi-browser interaction still require the configured database and deployed bridge. Type checking and the production build are also run for this change.
